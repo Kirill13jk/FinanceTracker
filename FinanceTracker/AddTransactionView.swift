@@ -2,8 +2,8 @@ import SwiftUI
 import SwiftData
 
 struct AddTransactionView: View {
-    private let categories = ["Еда", "Транспорт", "Жильё", "Развлечения", "Здоровье", "Другое"]
-    
+    private let categories = NSLocalizedString("categories", comment: "").components(separatedBy: ",")
+
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
@@ -15,40 +15,40 @@ struct AddTransactionView: View {
 
     var body: some View {
         Form {
-            Section(header: Text("Тип транзакции")) {
-                Picker("Выберите тип", selection: $isExpense) {
-                    Text("Расход").tag(true)
-                    Text("Доход").tag(false)
+            Section(header: Text(NSLocalizedString("transaction_type", comment: ""))) {
+                Picker(NSLocalizedString("select_type", comment: ""), selection: $isExpense) {
+                    Text(NSLocalizedString("expense", comment: "")).tag(true)
+                    Text(NSLocalizedString("income", comment: "")).tag(false)
                 }
                 .pickerStyle(SegmentedPickerStyle())
             }
-            Section(header: Text("Сумма")) {
-                TextField("Введите сумму", text: $amount)
+            Section(header: Text(NSLocalizedString("amount", comment: ""))) {
+                TextField(NSLocalizedString("enter_amount", comment: ""), text: $amount)
                     .keyboardType(.decimalPad)
             }
-            Section(header: Text("Категория")) {
-                Picker("Выберите категорию", selection: $category) {
+            Section(header: Text(NSLocalizedString("category", comment: ""))) {
+                Picker(NSLocalizedString("select_category", comment: ""), selection: $category) {
                     ForEach(categories, id: \.self) { category in
                         Text(category).tag(category)
                     }
                 }
             }
-            Section(header: Text("Дата")) {
-                DatePicker("Выберите дату", selection: $date, displayedComponents: .date)
+            Section(header: Text(NSLocalizedString("date", comment: ""))) {
+                DatePicker(NSLocalizedString("select_date", comment: ""), selection: $date, displayedComponents: .date)
             }
-            Section(header: Text("Заметка")) {
-                TextField("Добавьте заметку (необязательно)", text: $note)
+            Section(header: Text(NSLocalizedString("note", comment: ""))) {
+                TextField(NSLocalizedString("add_note_optional", comment: ""), text: $note)
             }
         }
-        .navigationTitle("Новая транзакция")
+        .navigationTitle(NSLocalizedString("new_transaction", comment: ""))
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button("Отмена") {
+                Button(NSLocalizedString("cancel", comment: "")) {
                     dismiss()
                 }
             }
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Сохранить") {
+                Button(NSLocalizedString("save", comment: "")) {
                     saveTransaction()
                 }
             }
@@ -56,10 +56,10 @@ struct AddTransactionView: View {
     }
 
     private func saveTransaction() {
-        print("saveTransaction() вызвана")
+        print(NSLocalizedString("save_transaction_called", comment: ""))
 
         guard let amountValue = Double(amount), !category.isEmpty else {
-            print("Некорректный ввод: сумма - \(amount), категория - \(category)")
+            print(String(format: NSLocalizedString("invalid_input", comment: ""), amount, category))
             return
         }
 
@@ -71,7 +71,9 @@ struct AddTransactionView: View {
             isExpense: isExpense
         )
         modelContext.insert(newTransaction)
-        print("Транзакция добавлена: \(newTransaction)")
+
+        print(NSLocalizedString("transaction_added", comment: ""))
+
         dismiss()
     }
 }

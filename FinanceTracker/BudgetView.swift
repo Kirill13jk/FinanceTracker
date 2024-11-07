@@ -9,19 +9,19 @@ struct BudgetView: View {
 
     var body: some View {
         Form {
-            Section(header: Text("Сумма бюджета")) {
-                TextField("Введите сумму", text: $amount)
+            Section(header: Text(NSLocalizedString("budget_amount", comment: ""))) {
+                TextField(NSLocalizedString("enter_amount", comment: ""), text: $amount)
                     .keyboardType(.decimalPad)
             }
-            Section(header: Text("Период")) {
-                DatePicker("Начало", selection: $startDate, displayedComponents: .date)
-                DatePicker("Конец", selection: $endDate, displayedComponents: .date)
+            Section(header: Text(NSLocalizedString("period", comment: ""))) {
+                DatePicker(NSLocalizedString("start_date", comment: ""), selection: $startDate, displayedComponents: .date)
+                DatePicker(NSLocalizedString("end_date", comment: ""), selection: $endDate, displayedComponents: .date)
             }
-            Button("Сохранить") {
+            Button(NSLocalizedString("save", comment: "")) {
                 saveBudget()
             }
         }
-        .navigationTitle("Установка бюджета")
+        .navigationTitle(NSLocalizedString("set_budget", comment: ""))
     }
 
     private func saveBudget() {

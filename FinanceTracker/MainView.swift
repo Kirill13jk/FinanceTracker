@@ -8,21 +8,47 @@ struct MainView: View {
         TabView {
             NavigationView {
                 ContentView()
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            NavigationLink(destination: SettingsView()) {
+                                Image(systemName: "gearshape")
+                                    .imageScale(.large)
+                            }
+                        }
+                    }
             }
             .tabItem {
-                Label("Транзакции", systemImage: "creditcard")
+                Label(NSLocalizedString("transactions", comment: ""), systemImage: "creditcard")
             }
+            
             NavigationView {
                 AnalyticsView()
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            NavigationLink(destination: SettingsView()) {
+                                Image(systemName: "gearshape")
+                                    .imageScale(.large)
+                            }
+                        }
+                    }
             }
             .tabItem {
-                Label("Аналитика", systemImage: "chart.bar.xaxis")
+                Label(NSLocalizedString("analytics", comment: ""), systemImage: "chart.bar.xaxis")
             }
+            
             NavigationView {
                 PostsView()
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            NavigationLink(destination: SettingsView()) {
+                                Image(systemName: "gearshape")
+                                    .imageScale(.large)
+                            }
+                        }
+                    }
             }
             .tabItem {
-                Label("Советы", systemImage: "lightbulb")
+                Label(NSLocalizedString("posts", comment: ""), systemImage: "lightbulb")
             }
         }
         .onAppear {

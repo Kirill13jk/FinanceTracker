@@ -5,32 +5,33 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var transactions: [Transaction]
     @Query private var budgets: [Budget]
+    @AppStorage("titleOn") private var titleOn: Bool = true
 
     var body: some View {
         VStack {
             if let currentBudget = budgets.first(where: { $0.startDate <= Date() && $0.endDate >= Date() }) {
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("Бюджет на период: \(currentBudget.amount, specifier: "%.2f") UZS")
+                    Text(String(format: NSLocalizedString("budget_for_period", comment: ""), currentBudget.amount))
                         .font(.headline)
-                    Text("Оставшийся бюджет: \(remainingBudget(currentBudget), specifier: "%.2f") UZS")
+                    Text(String(format: NSLocalizedString("remaining_budget", comment: ""), remainingBudget(currentBudget)))
                         .font(.subheadline)
                 }
                 .padding()
             }
             
-            Text("Количество транзакций: \(transactions.count)")
+            Text(String(format: NSLocalizedString("number_of_transactions", comment: ""), transactions.count))
                 .padding()
 
-            Button("Добавить тестовую транзакцию") {
+            Button(NSLocalizedString("add_test_transaction", comment: "")) {
                 let testTransaction = Transaction(
                     amount: 100.0,
-                    category: "Тест",
+                    category: NSLocalizedString("test", comment: ""),
                     date: Date(),
-                    note: "Тестовая транзакция",
+                    note: NSLocalizedString("test_transaction_note", comment: ""),
                     isExpense: true
                 )
                 modelContext.insert(testTransaction)
-                print("Тестовая транзакция добавлена")
+                print(NSLocalizedString("test_transaction_added", comment: ""))
             }
             .padding()
             
@@ -41,7 +42,7 @@ struct ContentView: View {
                 .onDelete(perform: deleteTransaction)
             }
             .listStyle(PlainListStyle())
-            .navigationTitle("Мои финансы")
+            .navigationTitle(titleOn ? NSLocalizedString("main_title", comment: "") : "")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     NavigationLink(destination: AddTransactionView()) {
@@ -51,7 +52,7 @@ struct ContentView: View {
             }
         }
         .onChange(of: transactions) { oldValue, newValue in
-            print("Обновлено количество транзакций: \(newValue.count)")
+            print(String(format: NSLocalizedString("number_of_transactions_updated", comment: ""), newValue.count))
         }
     }
 

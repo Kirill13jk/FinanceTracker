@@ -3,7 +3,7 @@ import SwiftData
 
 @Model
 class Post: Identifiable {
-    @Attribute(.unique) var id: UUID
+    var id: UUID
     var title: String
     var content: String
     var imageName: String

@@ -6,27 +6,28 @@ struct AnalyticsView: View {
     @Query private var transactions: [Transaction]
     @State private var selectedStartDate: Date = Calendar.current.date(byAdding: .month, value: -1, to: Date())!
     @State private var selectedEndDate: Date = Date()
+    @AppStorage("titleOn") private var titleOn: Bool = true
 
     var body: some View {
         VStack {
-            DatePicker("Начало периода", selection: $selectedStartDate, displayedComponents: .date)
+            DatePicker(NSLocalizedString("start_period", comment: ""), selection: $selectedStartDate, displayedComponents: .date)
                 .padding()
-            DatePicker("Конец периода", selection: $selectedEndDate, displayedComponents: .date)
+            DatePicker(NSLocalizedString("end_period", comment: ""), selection: $selectedEndDate, displayedComponents: .date)
                 .padding()
             
-            Text("Количество транзакций за выбранный период: \(filteredTransactions.count)")
+            Text(String(format: NSLocalizedString("number_of_transactions_in_period", comment: ""), filteredTransactions.count))
                 .padding()
             
             HStack {
                 Circle()
                     .fill(Color.red)
                     .frame(width: 10, height: 10)
-                Text("Расходы")
+                Text(NSLocalizedString("expenses", comment: ""))
                     .font(.caption)
                 Circle()
                     .fill(Color.green)
                     .frame(width: 10, height: 10)
-                Text("Доходы")
+                Text(NSLocalizedString("incomes", comment: ""))
                     .font(.caption)
             }
             .padding(.bottom, 5)
@@ -34,15 +35,15 @@ struct AnalyticsView: View {
             Chart {
                 ForEach(groupedExpenses, id: \.key) { category, total in
                     BarMark(
-                        x: .value("Категория", category),
-                        y: .value("Сумма", total)
+                        x: .value(NSLocalizedString("category", comment: ""), category),
+                        y: .value(NSLocalizedString("amount", comment: ""), total)
                     )
                     .foregroundStyle(Color.red)
                 }
                 ForEach(groupedIncomes, id: \.key) { category, total in
                     BarMark(
-                        x: .value("Категория", category),
-                        y: .value("Сумма", total)
+                        x: .value(NSLocalizedString("category", comment: ""), category),
+                        y: .value(NSLocalizedString("amount", comment: ""), total)
                     )
                     .foregroundStyle(Color.green)
                 }
@@ -55,7 +56,7 @@ struct AnalyticsView: View {
             }
             .padding()
         }
-        .navigationTitle("Аналитика")
+        .navigationTitle(titleOn ? NSLocalizedString("analytics", comment: "") : "")
         .onAppear {
             print("Grouped Expenses: \(groupedExpenses)")
             print("Grouped Incomes: \(groupedIncomes)")
