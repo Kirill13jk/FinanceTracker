@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "saving_money.jpg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

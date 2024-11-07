@@ -1,61 +1,74 @@
-//
-//  ContentView.swift
-//  FinanceTracker
-//
-//  Created by prom1 on 05.11.2024.
-//
-
 import SwiftUI
 import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    @Query private var transactions: [Transaction]
+    @Query private var budgets: [Budget]
 
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
+        VStack {
+            if let currentBudget = budgets.first(where: { $0.startDate <= Date() && $0.endDate >= Date() }) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Бюджет на период: \(currentBudget.amount, specifier: "%.2f") UZS")
+                        .font(.headline)
+                    Text("Оставшийся бюджет: \(remainingBudget(currentBudget), specifier: "%.2f") UZS")
+                        .font(.subheadline)
                 }
-                .onDelete(perform: deleteItems)
+                .padding()
             }
+            
+            Text("Количество транзакций: \(transactions.count)")
+                .padding()
+
+            Button("Добавить тестовую транзакцию") {
+                let testTransaction = Transaction(
+                    amount: 100.0,
+                    category: "Тест",
+                    date: Date(),
+                    note: "Тестовая транзакция",
+                    isExpense: true
+                )
+                modelContext.insert(testTransaction)
+                print("Тестовая транзакция добавлена")
+            }
+            .padding()
+            
+            List {
+                ForEach(transactions) { transaction in
+                    TransactionRow(transaction: transaction)
+                }
+                .onDelete(perform: deleteTransaction)
+            }
+            .listStyle(PlainListStyle())
+            .navigationTitle("Мои финансы")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
+                    NavigationLink(destination: AddTransactionView()) {
+                        Image(systemName: "plus")
                     }
                 }
             }
-        } detail: {
-            Text("Select an item")
+        }
+        .onChange(of: transactions) { oldValue, newValue in
+            print("Обновлено количество транзакций: \(newValue.count)")
         }
     }
 
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
+    private func deleteTransaction(at offsets: IndexSet) {
+        for index in offsets {
+            let transaction = transactions[index]
+            modelContext.delete(transaction)
         }
     }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
-            }
-        }
+    
+    private func remainingBudget(_ budget: Budget) -> Double {
+        let expenses = transactions
+            .filter { $0.date >= budget.startDate && $0.date <= budget.endDate && $0.isExpense }
+            .reduce(0) { $0 + $1.amount }
+        let incomes = transactions
+            .filter { $0.date >= budget.startDate && $0.date <= budget.endDate && !$0.isExpense }
+            .reduce(0) { $0 + $1.amount }
+        return budget.amount - expenses + incomes
     }
-}
-
-#Preview {
-    ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
 }
