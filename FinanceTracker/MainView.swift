@@ -18,9 +18,9 @@ struct MainView: View {
                     }
             }
             .tabItem {
-                Label(NSLocalizedString("transactions", comment: ""), systemImage: "creditcard")
+                Label("Transactions", systemImage: "creditcard")
             }
-            
+
             NavigationView {
                 AnalyticsView()
                     .toolbar {
@@ -33,9 +33,9 @@ struct MainView: View {
                     }
             }
             .tabItem {
-                Label(NSLocalizedString("analytics", comment: ""), systemImage: "chart.bar.xaxis")
+                Label("Analytics", systemImage: "chart.bar.xaxis")
             }
-            
+
             NavigationView {
                 PostsView()
                     .toolbar {
@@ -48,8 +48,11 @@ struct MainView: View {
                     }
             }
             .tabItem {
-                Label(NSLocalizedString("posts", comment: ""), systemImage: "lightbulb")
+                Label("Posts", systemImage: "lightbulb")
             }
+        }
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: 20)
         }
         .onAppear {
             initializeData()

@@ -4,78 +4,135 @@ import SwiftData
 
 struct AnalyticsView: View {
     @Query private var transactions: [Transaction]
-    @State private var selectedStartDate: Date = Calendar.current.date(byAdding: .month, value: -1, to: Date())!
+    @State private var selectedStartDate: Date = {
+        Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
+    }()
     @State private var selectedEndDate: Date = Date()
     @AppStorage("titleOn") private var titleOn: Bool = true
+    @AppStorage("selectedCurrency") private var selectedCurrency: String = "USD"
 
     var body: some View {
-        VStack {
-            DatePicker(NSLocalizedString("start_period", comment: ""), selection: $selectedStartDate, displayedComponents: .date)
-                .padding()
-            DatePicker(NSLocalizedString("end_period", comment: ""), selection: $selectedEndDate, displayedComponents: .date)
-                .padding()
-            
-            Text(String(format: NSLocalizedString("number_of_transactions_in_period", comment: ""), filteredTransactions.count))
-                .padding()
-            
-            HStack {
-                Circle()
-                    .fill(Color.red)
-                    .frame(width: 10, height: 10)
-                Text(NSLocalizedString("expenses", comment: ""))
-                    .font(.caption)
-                Circle()
-                    .fill(Color.green)
-                    .frame(width: 10, height: 10)
-                Text(NSLocalizedString("incomes", comment: ""))
-                    .font(.caption)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                DatePicker("Start Date", selection: $selectedStartDate, displayedComponents: .date)
+                    .padding(.horizontal)
+
+                DatePicker("End Date", selection: $selectedEndDate, displayedComponents: .date)
+                    .padding(.horizontal)
+
+                TransactionCountView(count: filteredTransactions.count)
+
+                CategoryLegendView(categories: categoriesInfo)
+
+                TransactionChartView(groupedTransactions: groupedTransactions, colorForCategory: colorForCategory, currencySymbol: currencySymbol())
             }
-            .padding(.bottom, 5)
-            
-            Chart {
-                ForEach(groupedExpenses, id: \.key) { category, total in
-                    BarMark(
-                        x: .value(NSLocalizedString("category", comment: ""), category),
-                        y: .value(NSLocalizedString("amount", comment: ""), total)
-                    )
-                    .foregroundStyle(Color.red)
-                }
-                ForEach(groupedIncomes, id: \.key) { category, total in
-                    BarMark(
-                        x: .value(NSLocalizedString("category", comment: ""), category),
-                        y: .value(NSLocalizedString("amount", comment: ""), total)
-                    )
-                    .foregroundStyle(Color.green)
-                }
-            }
-            .chartPlotStyle { plotArea in
-                plotArea
-                    .background(Color(UIColor.systemBackground))
-                    .cornerRadius(15)
-                    .shadow(radius: 5)
-            }
-            .padding()
+            .padding(.top)
         }
-        .navigationTitle(titleOn ? NSLocalizedString("analytics", comment: "") : "")
-        .onAppear {
-            print("Grouped Expenses: \(groupedExpenses)")
-            print("Grouped Incomes: \(groupedIncomes)")
-        }
+        .navigationTitle(titleOn ? "Analytics" : "")
     }
 
     private var filteredTransactions: [Transaction] {
         transactions.filter { $0.date >= selectedStartDate && $0.date <= selectedEndDate }
     }
 
-    private var groupedExpenses: [(key: String, value: Double)] {
-        let expenses = filteredTransactions.filter { $0.isExpense }
-        let grouped = Dictionary(grouping: expenses) { $0.category }
-        return grouped.map { (key: $0.key, value: $0.value.reduce(0) { $0 + $1.amount }) }
+    private var groupedTransactions: [(key: String, value: Double)] {
+        categoriesInfo.map { category in
+            let total = transactions.filter { $0.category == category.name && $0.date >= selectedStartDate && $0.date <= selectedEndDate }
+                                   .reduce(0.0) { $0 + ($1.isExpense ? -$1.amount : $1.amount) }
+            return (key: category.name, value: total)
+        }
     }
 
-    private var groupedIncomes: [(key: String, value: Double)] {
-        let incomes = filteredTransactions.filter { !$0.isExpense }
-        let grouped = Dictionary(grouping: incomes) { $0.category }
-        return grouped.map { (key: $0.key, value: $0.value.reduce(0) { $0 + $1.amount }) }
+    private func colorForCategory(_ categoryName: String) -> Color {
+        return categoriesInfo.first { $0.name == categoryName }?.color ?? Color.gray.opacity(0.5)
+    }
+
+    private func currencySymbol() -> String {
+        switch selectedCurrency {
+        case "USD":
+            return "$"
+        case "EUR":
+            return "€"
+        case "RUB":
+            return "₽"
+        case "UZS":
+            return "UZS "
+        case "GBP":
+            return "£"
+        case "JPY":
+            return "¥"
+        case "CNY":
+            return "¥"
+        default:
+            return "$"
+        }
+    }
+}
+
+struct TransactionCountView: View {
+    let count: Int
+
+    var body: some View {
+        Text("Number of transactions: \(count)")
+            .font(.headline)
+            .padding(.horizontal)
+    }
+}
+
+struct CategoryLegendView: View {
+    let categories: [CategoryInfo]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            ForEach(categories) { category in
+                HStack {
+                    Circle()
+                        .fill(category.color)
+                        .frame(width: 10, height: 10)
+                    Text(category.name)
+                        .font(.caption)
+                }
+            }
+        }
+        .padding(.horizontal)
+    }
+}
+
+struct TransactionChartView: View {
+    let groupedTransactions: [(key: String, value: Double)]
+    let colorForCategory: (String) -> Color
+    let currencySymbol: String
+
+    private var yDomain: ClosedRange<Double> {
+        let minValue = groupedTransactions.map { $0.value }.min() ?? 0.0
+        let maxValue = groupedTransactions.map { $0.value }.max() ?? 0.0
+        let lowerBound = (minValue * 1.2).rounded(.down)
+        let upperBound = (maxValue * 1.2).rounded(.up)
+        return lowerBound...upperBound
+    }
+
+    var body: some View {
+        if !groupedTransactions.isEmpty {
+            Chart {
+                ForEach(groupedTransactions, id: \.key) { category, total in
+                    BarMark(
+                        x: .value("Category", category),
+                        y: .value("Amount", total)
+                    )
+                    .foregroundStyle(colorForCategory(category))
+                }
+            }
+            .chartYScale(domain: yDomain)
+            .chartPlotStyle { plotArea in
+                plotArea
+                    .background(Color(UIColor.systemBackground))
+                    .cornerRadius(15)
+            }
+            .padding(.horizontal)
+        } else {
+            Text("No transactions in the selected period.")
+                .foregroundColor(.gray)
+                .padding(.horizontal)
+        }
     }
 }

@@ -3,7 +3,11 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(\.colorScheme) var colorScheme
     @AppStorage("titleOn") private var titleOn: Bool = true
-
+    @AppStorage("selectedCurrency") private var selectedCurrency: String = "USD"
+    @State private var tempSelectedCurrency: String = "USD"
+    
+    private let currencies = ["USD", "EUR", "RUB", "UZS", "GBP", "JPY", "CNY"]
+    
     var body: some View {
         Form {
             Section(header: Text(NSLocalizedString("color_scheme", comment: ""))) {
@@ -22,7 +26,25 @@ struct SettingsView: View {
                         .foregroundColor(.red)
                 }
             }
+            
+            Section(header: Text("Currency")) {
+                Picker("Select Currency", selection: $tempSelectedCurrency) {
+                    ForEach(currencies, id: \.self) { currency in
+                        Text(currency).tag(currency)
+                    }
+                }
+                .pickerStyle(WheelPickerStyle())
+                .labelsHidden()
+                
+                Button("Apply") {
+                    selectedCurrency = tempSelectedCurrency
+                }
+                .padding(.top, 10)
+            }
         }
         .navigationTitle(NSLocalizedString("settings", comment: ""))
+        .onAppear {
+            tempSelectedCurrency = selectedCurrency
+        }
     }
 }
