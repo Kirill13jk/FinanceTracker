@@ -2,7 +2,8 @@ import SwiftUI
 import SwiftData
 
 struct AddTransactionView: View {
-    private let paymentMethods = ["Cash", "Card", "Deposit"]
+    private let incomeSources = ["Work", "Business", "Deposit", "Friend"]
+    private let expenseCategories = ["Food", "Transport", "Housing", "Entertainment", "Health", "Other"]
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -10,13 +11,18 @@ struct AddTransactionView: View {
     @AppStorage("selectedCurrency") private var selectedCurrency: String = "USD"
 
     @State private var amount: String = ""
-    @State private var selectedCategoryName: String = categoriesInfo[0].name
-    @State private var selectedPaymentMethod: String = "Cash"
+    @State private var selectedCategoryName: String = "Food"
+    @State private var selectedPaymentMethod: String = "Work"
     @State private var note: String = ""
-    @State private var isExpense: Bool = true
+    @State private var isExpense: Bool = false
     @State private var totalBalance: Double = 0.0
     @State private var showCategoryPicker = false
     @State private var showPaymentMethodPicker = false
+    @State private var showDatePicker = false
+    @State private var selectedDate: Date = Date()
+    @State private var showAlert = false
+    @State private var alertMessage = ""
+    @FocusState private var noteFieldIsFocused: Bool
 
     var body: some View {
         VStack {
@@ -30,10 +36,6 @@ struct AddTransactionView: View {
                         .bold()
                 }
                 Spacer()
-                Button(action: {}) {
-                    Image(systemName: "slider.horizontal.3")
-                        .font(.title2)
-                }
             }
             .padding()
             .onAppear {
@@ -41,78 +43,74 @@ struct AddTransactionView: View {
             }
 
             Picker("Type", selection: $isExpense) {
-                Text("Expense").tag(true)
                 Text("Income").tag(false)
+                Text("Expense").tag(true)
             }
             .pickerStyle(SegmentedPickerStyle())
             .padding(.horizontal)
 
             HStack(spacing: 20) {
-                Button(action: {
-                    showPaymentMethodPicker.toggle()
-                }) {
-                    HStack {
-                        Image(systemName: "creditcard")
-                        Text(selectedPaymentMethod)
-                    }
-                    .padding()
-                    .background(Color.blue.opacity(0.1))
-                    .cornerRadius(10)
-                }
-                .sheet(isPresented: $showPaymentMethodPicker) {
-                    VStack {
-                        Text("Select Payment Method")
-                            .font(.headline)
-                            .padding()
-                        Picker("Select Payment Method", selection: $selectedPaymentMethod) {
-                            ForEach(paymentMethods, id: \.self) { method in
-                                Text(method).tag(method)
-                            }
-                        }
-                        .pickerStyle(WheelPickerStyle())
-                        .labelsHidden()
-                        .padding()
-                        Button("Done") {
-                            showPaymentMethodPicker = false
+                if isExpense {
+                    Button(action: {
+                        showCategoryPicker.toggle()
+                    }) {
+                        HStack {
+                            Image(systemName: "tag.fill")
+                            Text(selectedCategoryName)
                         }
                         .padding()
+                        .background(categoryColor(for: selectedCategoryName))
+                        .cornerRadius(10)
                     }
-                }
-
-                Button(action: {
-                    showCategoryPicker.toggle()
-                }) {
-                    HStack {
-                        Image(systemName: "tag.fill")
-                        Text(selectedCategoryName)
-                    }
-                    .padding()
-                    .background(categoryColor(for: selectedCategoryName))
-                    .cornerRadius(10)
-                }
-                .sheet(isPresented: $showCategoryPicker) {
-                    VStack {
-                        Text("Select Category")
-                            .font(.headline)
-                            .padding()
-                        Picker("Select Category", selection: $selectedCategoryName) {
-                            ForEach(categoriesInfo, id: \.name) { category in
-                                HStack {
-                                    Circle()
-                                        .fill(category.color)
-                                        .frame(width: 10, height: 10)
-                                    Text(category.name)
+                    .sheet(isPresented: $showCategoryPicker) {
+                        VStack {
+                            Text("Select Category")
+                                .font(.headline)
+                                .padding()
+                            Picker("Select Category", selection: $selectedCategoryName) {
+                                ForEach(expenseCategories, id: \.self) { category in
+                                    Text(category).tag(category)
                                 }
-                                .tag(category.name)
                             }
+                            .pickerStyle(WheelPickerStyle())
+                            .labelsHidden()
+                            .padding()
+                            Button("Done") {
+                                showCategoryPicker = false
+                            }
+                            .padding()
                         }
-                        .pickerStyle(WheelPickerStyle())
-                        .labelsHidden()
-                        .padding()
-                        Button("Done") {
-                            showCategoryPicker = false
+                    }
+                } else {
+                    Button(action: {
+                        showPaymentMethodPicker.toggle()
+                    }) {
+                        HStack {
+                            Image(systemName: "creditcard")
+                            Text(selectedPaymentMethod)
                         }
                         .padding()
+                        .background(Color.blue.opacity(0.1))
+                        .cornerRadius(10)
+                    }
+                    .sheet(isPresented: $showPaymentMethodPicker) {
+                        VStack {
+                            Text("Select Income Source")
+                                .font(.headline)
+                                .padding()
+                            Picker("Select Income Source", selection: $selectedPaymentMethod) {
+                                ForEach(incomeSources, id: \.self) { source in
+                                    Text(source).tag(source)
+                                }
+                            }
+                            .pickerStyle(WheelPickerStyle())
+                            .labelsHidden()
+                            .padding()
+                            Button("Done") {
+                                showPaymentMethodPicker = false
+                            }
+                            .padding()
+                        }
                     }
                 }
             }
@@ -128,26 +126,70 @@ struct AddTransactionView: View {
                 .background(Color.gray.opacity(0.1))
                 .cornerRadius(10)
                 .padding(.horizontal)
+                .focused($noteFieldIsFocused)
 
             Spacer()
 
-            NumericKeypad(amount: $amount, onSave: saveTransaction)
-                .padding(.bottom, 30)
-                .padding(.horizontal)
+            NumericKeypad(
+                amount: $amount,
+                onSave: saveTransaction,
+                onCategoryTap: {
+                    showCategoryPicker = true
+                },
+                onDateTap: {
+                    showDatePicker = true
+                }
+            )
+            .padding(.bottom, 30)
+            .padding(.horizontal)
         }
         .navigationBarTitle("", displayMode: .inline)
         .padding(.top)
+        .alert(isPresented: $showAlert) {
+            Alert(title: Text("Invalid Input"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
+        }
+        .sheet(isPresented: $showDatePicker) {
+            VStack {
+                Text("Select Date")
+                    .font(.headline)
+                    .padding()
+                DatePicker("Transaction Date", selection: $selectedDate, displayedComponents: .date)
+                    .datePickerStyle(GraphicalDatePickerStyle())
+                    .labelsHidden()
+                    .padding()
+                Button("Done") {
+                    showDatePicker = false
+                }
+                .padding()
+            }
+        }
     }
 
     private func saveTransaction() {
-        guard let amountValue = Double(amount), !selectedCategoryName.isEmpty else {
+        guard let amountValue = Double(amount), amountValue > 0 else {
+            alertMessage = "Please enter a valid amount greater than 0."
+            showAlert = true
             return
         }
 
+        if isExpense && selectedCategoryName.isEmpty {
+            alertMessage = "Please select a category."
+            showAlert = true
+            return
+        }
+
+        if !isExpense && selectedPaymentMethod.isEmpty {
+            alertMessage = "Please select an income source."
+            showAlert = true
+            return
+        }
+
+        let category = isExpense ? selectedCategoryName : selectedPaymentMethod
+
         let newTransaction = Transaction(
             amount: amountValue,
-            category: selectedCategoryName,
-            date: Date(),
+            category: category,
+            date: selectedDate,
             note: note.isEmpty ? nil : note,
             isExpense: isExpense
         )
@@ -173,7 +215,7 @@ struct AddTransactionView: View {
     }
 
     private func categoryColor(for name: String) -> Color {
-        return categoriesInfo.first { $0.name == name }?.color ?? Color.gray.opacity(0.5)
+        categoriesInfo.first { $0.name == name }?.color ?? Color.gray.opacity(0.5)
     }
 
     private func currencySymbol() -> String {
@@ -201,6 +243,8 @@ struct AddTransactionView: View {
 struct NumericKeypad: View {
     @Binding var amount: String
     var onSave: () -> Void
+    var onCategoryTap: () -> Void
+    var onDateTap: () -> Void
 
     let buttons = [
         ["1", "2", "3"],
@@ -228,9 +272,11 @@ struct NumericKeypad: View {
                 }
             }
             .padding(.horizontal)
-            
+
             HStack(spacing: 8) {
-                Button(action: {}) {
+                Button(action: {
+                    onCategoryTap()
+                }) {
                     Image(systemName: "tag.fill")
                         .font(.title2)
                         .frame(maxWidth: .infinity)
@@ -239,7 +285,9 @@ struct NumericKeypad: View {
                         .cornerRadius(8)
                 }
 
-                Button(action: {}) {
+                Button(action: {
+                    onDateTap()
+                }) {
                     Image(systemName: "calendar")
                         .font(.title2)
                         .frame(maxWidth: .infinity)

@@ -12,92 +12,79 @@ struct ContentView: View {
     @State private var selectedMonth: String = "All"
 
     var body: some View {
-        VStack(spacing: 20) {
-            VStack {
-                Text("Total Balance")
-                    .font(.headline)
-                    .foregroundColor(.gray)
-                Text("\(currencySymbol())\(totalBalance(), specifier: "%.2f")")
-                    .font(.largeTitle)
-                    .bold()
-            }
+          VStack(spacing: 20) {
+              VStack {
+                  Text("Total Balance")
+                      .font(.headline)
+                      .foregroundColor(.gray)
+                  Text("\(currencySymbol())\(totalBalance(), specifier: "%.2f")")
+                      .font(.largeTitle)
+                      .bold()
+              }
 
-            HStack(spacing: 20) {
-                Picker("Type", selection: $selectedType) {
-                    Text("All").tag("All")
-                    Text("Expenses").tag("Expenses")
-                    Text("Income").tag("Income")
-                }
-                .pickerStyle(SegmentedPickerStyle())
+              HStack(spacing: 20) {
+                  Picker("Type", selection: $selectedType) {
+                      Text("All").tag("All")
+                      Text("Expenses").tag("Expenses")
+                      Text("Income").tag("Income")
+                  }
+                  .pickerStyle(SegmentedPickerStyle())
 
-                Picker("Month", selection: $selectedMonth) {
-                    Text("All").tag("All")
-                    ForEach(months(), id: \.self) { month in
-                        Text(month).tag(month)
-                    }
-                }
-                .pickerStyle(MenuPickerStyle())
-            }
-            .padding(.horizontal)
+                  Picker("Month", selection: $selectedMonth) {
+                      Text("All").tag("All")
+                      ForEach(months(), id: \.self) { month in
+                          Text(month).tag(month)
+                      }
+                  }
+                  .pickerStyle(MenuPickerStyle())
+              }
+              .padding(.horizontal)
 
-            Chart {
-                ForEach(groupedTransactions(), id: \.key) { day, amount in
-                    BarMark(
-                        x: .value("Day", day),
-                        y: .value("Amount", amount)
-                    )
-                    .foregroundStyle(Color.blue)
-                }
-            }
-            .chartYAxis(.hidden)
-            .frame(height: 150)
-            .padding(.horizontal)
+              HStack(spacing: 20) {
+                  SummaryView(title: "Today", amount: totalForPeriod(.today))
+                  SummaryView(title: "Week", amount: totalForPeriod(.week))
+                  SummaryView(title: "Month", amount: totalForPeriod(.month))
+              }
 
-            HStack(spacing: 20) {
-                SummaryView(title: "Today", amount: totalForPeriod(.today))
-                SummaryView(title: "Week", amount: totalForPeriod(.week))
-                SummaryView(title: "Month", amount: totalForPeriod(.month))
-            }
-
-            List {
-                ForEach(filteredTransactions()) { transaction in
-                    HStack {
-                        Circle()
-                            .fill(colorForCategory(transaction.category))
-                            .frame(width: 10, height: 10)
-                        VStack(alignment: .leading) {
-                            Text(transaction.category)
-                                .font(.headline)
-                            Text(transaction.note ?? "")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                        }
-                        Spacer()
-                        VStack(alignment: .trailing) {
-                            Text("\(currencySymbol())\(transaction.amount, specifier: "%.2f")")
-                                .font(.headline)
-                                .foregroundColor(transaction.isExpense ? .red : .green)
-                            Text(transaction.date, style: .date)
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                        }
-                    }
-                    .padding(.vertical, 8)
-                }
-                .onDelete(perform: deleteTransaction)
-            }
-            .listStyle(PlainListStyle())
-        }
-        .navigationTitle(titleOn ? NSLocalizedString("main_title", comment: "") : "")
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                NavigationLink(destination: AddTransactionView()) {
-                    Image(systemName: "plus")
-                }
-            }
-        }
-        .padding(.top)
-    }
+              List {
+                  ForEach(filteredTransactions()) { transaction in
+                      HStack {
+                          Circle()
+                              .fill(colorForCategory(transaction.category))
+                              .frame(width: 10, height: 10)
+                          VStack(alignment: .leading) {
+                              Text(transaction.category)
+                                  .font(.headline)
+                              Text(transaction.note ?? "")
+                                  .font(.subheadline)
+                                  .foregroundColor(.gray)
+                          }
+                          Spacer()
+                          VStack(alignment: .trailing) {
+                              Text("\(currencySymbol())\(transaction.amount, specifier: "%.2f")")
+                                  .font(.headline)
+                                  .foregroundColor(transaction.isExpense ? .red : .green)
+                              Text(transaction.date, style: .date)
+                                  .font(.subheadline)
+                                  .foregroundColor(.gray)
+                          }
+                      }
+                      .padding(.vertical, 8)
+                  }
+                  .onDelete(perform: deleteTransaction)
+              }
+              .listStyle(PlainListStyle())
+          }
+          .navigationTitle(titleOn ? NSLocalizedString("main_title", comment: "") : "")
+          .toolbar {
+              ToolbarItem(placement: .navigationBarTrailing) {
+                  NavigationLink(destination: AddTransactionView()) {
+                      Image(systemName: "plus")
+                  }
+              }
+          }
+          .padding(.top)
+      }
 
     private func totalBalance() -> Double {
         let incomes = transactions.filter { !$0.isExpense }.reduce(0) { $0 + $1.amount }
