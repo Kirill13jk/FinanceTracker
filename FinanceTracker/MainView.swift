@@ -28,13 +28,13 @@ struct MainView: View {
                             NavigationLink(destination: SettingsView()) {
                                 Image(systemName: "gearshape")
                                     .imageScale(.large)
+                                }
                             }
                         }
-                    }
-            }
-            .tabItem {
-                Label("Analytics", systemImage: "chart.bar.xaxis")
-            }
+                }
+                .tabItem {
+                    Label("Analytics", systemImage: "chart.bar.xaxis")
+                }
 
             NavigationView {
                 PostsView()
@@ -43,23 +43,34 @@ struct MainView: View {
                             NavigationLink(destination: SettingsView()) {
                                 Image(systemName: "gearshape")
                                     .imageScale(.large)
+                                }
                             }
                         }
-                    }
-            }
-            .tabItem {
-                Label("Posts", systemImage: "lightbulb")
-            }
+                }
+                .tabItem {
+                    Label("Posts", systemImage: "lightbulb")
+                }
+
+            NavigationView {
+                GoalsView()
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            NavigationLink(destination: SettingsView()) {
+                                Image(systemName: "gearshape")
+                                    .imageScale(.large)
+                                }
+                            }
+                        }
+                }
+                .tabItem {
+                    Label("Goals", systemImage: "target")
+                }
         }
         .safeAreaInset(edge: .bottom) {
             Color.clear.frame(height: 20)
         }
         .onAppear {
-            initializeData()
+          
         }
-    }
-
-    private func initializeData() {
-        DataInitializer.initializeData(modelContext: modelContext)
     }
 }

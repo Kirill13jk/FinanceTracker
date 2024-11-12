@@ -194,7 +194,12 @@ struct AddTransactionView: View {
             isExpense: isExpense
         )
         modelContext.insert(newTransaction)
-        dismiss()
+        do {
+            try modelContext.save()
+            dismiss()
+        } catch {
+            print("Error saving transaction: \(error)")
+        }
     }
 
     private func calculateTotalBalance() -> Double {
@@ -215,7 +220,7 @@ struct AddTransactionView: View {
     }
 
     private func categoryColor(for name: String) -> Color {
-        categoriesInfo.first { $0.name == name }?.color ?? Color.gray.opacity(0.5)
+        return categoriesInfo.first { $0.name == name }?.color ?? Color.gray.opacity(0.5)
     }
 
     private func currencySymbol() -> String {
