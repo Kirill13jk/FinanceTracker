@@ -1,50 +1,60 @@
+// SettingsView.swift
+
 import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.colorScheme) var colorScheme
-    @AppStorage("titleOn") private var titleOn: Bool = true
     @AppStorage("selectedCurrency") private var selectedCurrency: String = "USD"
     @State private var tempSelectedCurrency: String = "USD"
     
     private let currencies = ["USD", "EUR", "RUB", "UZS", "GBP", "JPY", "CNY"]
     
     var body: some View {
-        Form {
-            Section(header: Text(NSLocalizedString("color_scheme", comment: ""))) {
-                Text(colorScheme == .light ? NSLocalizedString("light_theme_enabled", comment: "") : NSLocalizedString("dark_theme_enabled", comment: ""))
-                    .font(.headline)
-                    .foregroundColor(colorScheme == .light ? .blue : .orange)
-            }
-            
-            Section(header: Text(NSLocalizedString("title_settings", comment: ""))) {
-                Toggle(NSLocalizedString("toggle_title", comment: ""), isOn: $titleOn)
-                if titleOn {
-                    Text(NSLocalizedString("navigation_title_enabled", comment: ""))
-                        .foregroundColor(.green)
-                } else {
-                    Text(NSLocalizedString("navigation_title_disabled", comment: ""))
-                        .foregroundColor(.red)
-                }
-            }
-            
-            Section(header: Text("Currency")) {
-                Picker("Select Currency", selection: $tempSelectedCurrency) {
+        List {
+            // Секция настроек валюты
+            Section(header: Text("Валюта")) {
+                Picker("Выберите валюту", selection: $tempSelectedCurrency) {
                     ForEach(currencies, id: \.self) { currency in
                         Text(currency).tag(currency)
                     }
                 }
-                .pickerStyle(WheelPickerStyle())
-                .labelsHidden()
+                .pickerStyle(MenuPickerStyle())
                 
-                Button("Apply") {
+                Button(action: {
                     selectedCurrency = tempSelectedCurrency
+                }) {
+                    Text("Применить")
+                        .foregroundColor(.blue)
                 }
-                .padding(.top, 10)
+            }
+            
+            // Секция настроек цветовой схемы
+            Section(header: Text("Цветовая схема")) {
+                HStack {
+                    Text("Текущая тема")
+                    Spacer()
+                    Text(colorScheme == .light ? "Светлая" : "Тёмная")
+                        .foregroundColor(colorScheme == .light ? .blue : .orange)
+                }
             }
         }
-        .navigationTitle(NSLocalizedString("settings", comment: ""))
+        .listStyle(InsetGroupedListStyle())
+        .navigationTitle("Настройки")
         .onAppear {
             tempSelectedCurrency = selectedCurrency
+        }
+    }
+}
+
+struct SettingsView_Previews: PreviewProvider {
+    static var previews: some View {
+        NavigationView {
+            SettingsView()
+                .preferredColorScheme(.light)
+        }
+        NavigationView {
+            SettingsView()
+                .preferredColorScheme(.dark)
         }
     }
 }

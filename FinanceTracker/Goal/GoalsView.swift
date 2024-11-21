@@ -1,48 +1,48 @@
+// GoalsView.swift
+
 import SwiftUI
 import SwiftData
 
 struct GoalsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Goal.endDate, order: .forward) private var goals: [Goal]
-    @AppStorage("selectedCurrency") private var selectedCurrency: String = "USD"
 
     @State private var showAddGoalSheet = false
 
     var body: some View {
-        NavigationView {
-            List {
-                ForEach(goals) { goal in
-                    NavigationLink(destination: GoalDetailView(goal: goal)) {
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(goal.title)
-                                    .font(.headline)
-                                Text("Target: \(currencySymbol())\(goal.targetAmount, specifier: "%.2f")")
-                                    .font(.subheadline)
-                                    .foregroundColor(.gray)
-                            }
-                            Spacer()
-                            ProgressView(value: goalProgress(goal))
-                                .progressViewStyle(LinearProgressViewStyle())
-                                .frame(width: 100)
+        List {
+            ForEach(goals) { goal in
+                NavigationLink(destination: GoalDetailView(goal: goal)) {
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text(goal.title)
+                                .font(.headline)
+                            Text("Цель: \(goal.targetAmount, specifier: "%.2f")")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
                         }
-                    }
-                }
-                .onDelete(perform: deleteGoal)
-            }
-            .navigationTitle("Financial Goals")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        showAddGoalSheet = true
-                    }) {
-                        Image(systemName: "plus")
+                        Spacer()
+                        ProgressView(value: goalProgress(goal))
+                            .progressViewStyle(LinearProgressViewStyle(tint: colorFromName(goal.colorName)))
+                            .scaleEffect(x: 1, y: 2, anchor: .center) // Увеличиваем высоту
+                            .frame(width: 100)
                     }
                 }
             }
-            .sheet(isPresented: $showAddGoalSheet) {
-                AddGoalView()
+            .onDelete(perform: deleteGoal)
+        }
+        .navigationTitle("Цели")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    showAddGoalSheet = true
+                }) {
+                    Image(systemName: "plus")
+                }
             }
+        }
+        .sheet(isPresented: $showAddGoalSheet) {
+            AddGoalView()
         }
     }
 
@@ -50,31 +50,29 @@ struct GoalsView: View {
         return min(goal.currentAmount / goal.targetAmount, 1.0)
     }
 
-    private func currencySymbol() -> String {
-        switch selectedCurrency {
-        case "USD":
-            return "$"
-        case "EUR":
-            return "€"
-        case "RUB":
-            return "₽"
-        case "UZS":
-            return "UZS "
-        case "GBP":
-            return "£"
-        case "JPY":
-            return "¥"
-        case "CNY":
-            return "¥"
-        default:
-            return "$"
-        }
-    }
-
     private func deleteGoal(at offsets: IndexSet) {
         for index in offsets {
             let goal = goals[index]
             modelContext.delete(goal)
+        }
+    }
+
+    private func colorFromName(_ name: String) -> Color {
+        switch name {
+        case "red":
+            return .red
+        case "blue":
+            return .blue
+        case "green":
+            return .green
+        case "purple":
+            return .purple
+        case "orange":
+            return .orange
+        case "gray":
+            return .gray
+        default:
+            return .blue
         }
     }
 }

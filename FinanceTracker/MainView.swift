@@ -1,76 +1,50 @@
 import SwiftUI
-import SwiftData
 
 struct MainView: View {
-    @Environment(\.modelContext) private var modelContext
+    @State private var selectedTab = 0
 
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
+            // Первый таб: Главная
             NavigationView {
                 ContentView()
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarLeading) {
-                            NavigationLink(destination: SettingsView()) {
-                                Image(systemName: "gearshape")
-                                    .imageScale(.large)
-                            }
-                        }
-                    }
+                    .navigationTitle("Home")
+                    .navigationBarTitleDisplayMode(.inline)
             }
             .tabItem {
-                Label("Transactions", systemImage: "creditcard")
+                Label("Home", systemImage: "house")
             }
+            .tag(0)
 
+            // Второй таб: Аналитика
             NavigationView {
                 AnalyticsView()
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarLeading) {
-                            NavigationLink(destination: SettingsView()) {
-                                Image(systemName: "gearshape")
-                                    .imageScale(.large)
-                                }
-                            }
-                        }
-                }
-                .tabItem {
-                    Label("Analytics", systemImage: "chart.bar.xaxis")
-                }
+                    .navigationTitle("Analytics")
+                    .navigationBarTitleDisplayMode(.inline)
+            }
+            .tabItem {
+                Label("Analytics", systemImage: "chart.pie")
+            }
+            .tag(1)
 
-            NavigationView {
-                PostsView()
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarLeading) {
-                            NavigationLink(destination: SettingsView()) {
-                                Image(systemName: "gearshape")
-                                    .imageScale(.large)
-                                }
-                            }
-                        }
-                }
-                .tabItem {
-                    Label("Posts", systemImage: "lightbulb")
-                }
-
+            // Третий таб: Цели
             NavigationView {
                 GoalsView()
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarLeading) {
-                            NavigationLink(destination: SettingsView()) {
-                                Image(systemName: "gearshape")
-                                    .imageScale(.large)
-                                }
-                            }
-                        }
-                }
+                    .navigationTitle("Goals")
+                    .navigationBarTitleDisplayMode(.inline)
+            }
+            .tabItem {
+                Label("Goals", systemImage: "target")
+            }
+            .tag(2)
+            
+            // Четвертый таб: Настройки
+            SettingsView()
                 .tabItem {
-                    Label("Goals", systemImage: "target")
+                    Label("Settings", systemImage: "gearshape")
                 }
+                .tag(3)
         }
-        .safeAreaInset(edge: .bottom) {
-            Color.clear.frame(height: 20)
-        }
-        .onAppear {
-          
-        }
+        .accentColor(.blue)
     }
 }

@@ -1,9 +1,23 @@
+// AddTransactionView.swift
+
 import SwiftUI
 import SwiftData
 
 struct AddTransactionView: View {
-    private let incomeSources = ["Work", "Business", "Deposit", "Friend"]
-    private let expenseCategories = ["Food", "Transport", "Housing", "Entertainment", "Health", "Other"]
+    private let incomeSources = [
+        ("Work", "briefcase.fill"),
+        ("Business", "building.2.fill"),
+        ("Deposit", "banknote.fill"),
+        ("Friend", "person.2.fill")
+    ]
+    private let expenseCategories = [
+        ("Food", "fork.knife"),
+        ("Transport", "car.fill"),
+        ("Housing", "house.fill"),
+        ("Entertainment", "gamecontroller.fill"),
+        ("Health", "heart.fill"),
+        ("Other", "ellipsis")
+    ]
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -16,9 +30,6 @@ struct AddTransactionView: View {
     @State private var note: String = ""
     @State private var isExpense: Bool = false
     @State private var totalBalance: Double = 0.0
-    @State private var showCategoryPicker = false
-    @State private var showPaymentMethodPicker = false
-    @State private var showDatePicker = false
     @State private var selectedDate: Date = Date()
     @State private var showAlert = false
     @State private var alertMessage = ""
@@ -49,72 +60,17 @@ struct AddTransactionView: View {
             .pickerStyle(SegmentedPickerStyle())
             .padding(.horizontal)
 
-            HStack(spacing: 20) {
-                if isExpense {
-                    Button(action: {
-                        showCategoryPicker.toggle()
-                    }) {
-                        HStack {
-                            Image(systemName: "tag.fill")
-                            Text(selectedCategoryName)
-                        }
-                        .padding()
-                        .background(categoryColor(for: selectedCategoryName))
-                        .cornerRadius(10)
-                    }
-                    .sheet(isPresented: $showCategoryPicker) {
-                        VStack {
-                            Text("Select Category")
-                                .font(.headline)
-                                .padding()
-                            Picker("Select Category", selection: $selectedCategoryName) {
-                                ForEach(expenseCategories, id: \.self) { category in
-                                    Text(category).tag(category)
-                                }
-                            }
-                            .pickerStyle(WheelPickerStyle())
-                            .labelsHidden()
-                            .padding()
-                            Button("Done") {
-                                showCategoryPicker = false
-                            }
-                            .padding()
-                        }
-                    }
-                } else {
-                    Button(action: {
-                        showPaymentMethodPicker.toggle()
-                    }) {
-                        HStack {
-                            Image(systemName: "creditcard")
-                            Text(selectedPaymentMethod)
-                        }
-                        .padding()
-                        .background(Color.blue.opacity(0.1))
-                        .cornerRadius(10)
-                    }
-                    .sheet(isPresented: $showPaymentMethodPicker) {
-                        VStack {
-                            Text("Select Income Source")
-                                .font(.headline)
-                                .padding()
-                            Picker("Select Income Source", selection: $selectedPaymentMethod) {
-                                ForEach(incomeSources, id: \.self) { source in
-                                    Text(source).tag(source)
-                                }
-                            }
-                            .pickerStyle(WheelPickerStyle())
-                            .labelsHidden()
-                            .padding()
-                            Button("Done") {
-                                showPaymentMethodPicker = false
-                            }
-                            .padding()
-                        }
-                    }
-                }
+            if isExpense {
+                CategorySelectionGridView(
+                    categories: expenseCategories,
+                    selectedCategory: $selectedCategoryName
+                )
+            } else {
+                CategorySelectionGridView(
+                    categories: incomeSources,
+                    selectedCategory: $selectedPaymentMethod
+                )
             }
-            .padding(.horizontal)
 
             Text("\(currencySymbol())\(amount.isEmpty ? "0.00" : amount)")
                 .font(.system(size: 50))
@@ -133,11 +89,10 @@ struct AddTransactionView: View {
             NumericKeypad(
                 amount: $amount,
                 onSave: saveTransaction,
-                onCategoryTap: {
-                    showCategoryPicker = true
-                },
                 onDateTap: {
-                    showDatePicker = true
+                    noteFieldIsFocused = false
+                    UIApplication.shared.endEditing()
+                    // Handle date selection if needed
                 }
             )
             .padding(.bottom, 30)
@@ -148,38 +103,11 @@ struct AddTransactionView: View {
         .alert(isPresented: $showAlert) {
             Alert(title: Text("Invalid Input"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
         }
-        .sheet(isPresented: $showDatePicker) {
-            VStack {
-                Text("Select Date")
-                    .font(.headline)
-                    .padding()
-                DatePicker("Transaction Date", selection: $selectedDate, displayedComponents: .date)
-                    .datePickerStyle(GraphicalDatePickerStyle())
-                    .labelsHidden()
-                    .padding()
-                Button("Done") {
-                    showDatePicker = false
-                }
-                .padding()
-            }
-        }
     }
 
     private func saveTransaction() {
         guard let amountValue = Double(amount), amountValue > 0 else {
             alertMessage = "Please enter a valid amount greater than 0."
-            showAlert = true
-            return
-        }
-
-        if isExpense && selectedCategoryName.isEmpty {
-            alertMessage = "Please select a category."
-            showAlert = true
-            return
-        }
-
-        if !isExpense && selectedPaymentMethod.isEmpty {
-            alertMessage = "Please select an income source."
             showAlert = true
             return
         }
@@ -219,10 +147,6 @@ struct AddTransactionView: View {
         }
     }
 
-    private func categoryColor(for name: String) -> Color {
-        return categoriesInfo.first { $0.name == name }?.color ?? Color.gray.opacity(0.5)
-    }
-
     private func currencySymbol() -> String {
         switch selectedCurrency {
         case "USD":
@@ -245,10 +169,46 @@ struct AddTransactionView: View {
     }
 }
 
+struct CategorySelectionGridView: View {
+    let categories: [(String, String)]
+    @Binding var selectedCategory: String
+
+    let columns = [GridItem(.adaptive(minimum: 60))]
+
+    var body: some View {
+        LazyVGrid(columns: columns, spacing: 16) {
+            ForEach(categories, id: \.0) { category in
+                Button(action: {
+                    selectedCategory = category.0
+                }) {
+                    VStack {
+                        Image(systemName: category.1)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 24, height: 24)
+                            .foregroundColor(selectedCategory == category.0 ? .blue : .gray)
+                    }
+                    .frame(width: 60, height: 60)
+                    .background(selectedCategory == category.0 ? Color.blue.opacity(0.2) : Color.gray.opacity(0.1))
+                    .clipShape(Circle())
+                    .overlay(
+                        Text(category.0)
+                            .font(.caption2)
+                            .foregroundColor(.primary)
+                            .frame(width: 60)
+                            .offset(y: 38)
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
+        .padding(.horizontal)
+    }
+}
+
 struct NumericKeypad: View {
     @Binding var amount: String
     var onSave: () -> Void
-    var onCategoryTap: () -> Void
     var onDateTap: () -> Void
 
     let buttons = [
@@ -279,17 +239,6 @@ struct NumericKeypad: View {
             .padding(.horizontal)
 
             HStack(spacing: 8) {
-                Button(action: {
-                    onCategoryTap()
-                }) {
-                    Image(systemName: "tag.fill")
-                        .font(.title2)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 60)
-                        .background(Color.purple.opacity(0.1))
-                        .cornerRadius(8)
-                }
-
                 Button(action: {
                     onDateTap()
                 }) {
@@ -330,5 +279,11 @@ struct NumericKeypad: View {
         default:
             amount.append(input)
         }
+    }
+}
+
+extension UIApplication {
+    func endEditing() {
+        sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }

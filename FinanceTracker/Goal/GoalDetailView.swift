@@ -1,38 +1,50 @@
+// GoalDetailView.swift
+
 import SwiftUI
 import SwiftData
 
 struct GoalDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Bindable var goal: Goal
-    @AppStorage("selectedCurrency") private var selectedCurrency: String = "USD"
 
     @State private var addAmount: String = ""
 
     var body: some View {
         VStack(spacing: 20) {
             Text(goal.title)
-                .font(.largeTitle)
+                .font(.title2)
                 .bold()
                 .padding()
 
             ProgressView(value: goalProgress())
-                .progressViewStyle(LinearProgressViewStyle())
+                .progressViewStyle(LinearProgressViewStyle(tint: colorFromName(goal.colorName)))
+                .scaleEffect(x: 1, y: 4, anchor: .center) // Увеличиваем высоту
                 .padding()
 
-            Text("Target Amount: \(currencySymbol())\(goal.targetAmount, specifier: "%.2f")")
-                .font(.headline)
+            HStack(alignment: .center, spacing: 8) {
+                Image(systemName: "target")
+                    .foregroundColor(.blue)
+                Text("Цель: \(goal.targetAmount, specifier: "%.2f")")
+                    .font(.headline)
+            }
+            .padding(.horizontal)
 
-            Text("Current Amount: \(currencySymbol())\(goal.currentAmount, specifier: "%.2f")")
-                .font(.headline)
+            HStack(alignment: .center, spacing: 8) {
+                Image(systemName: "dollarsign.circle")
+                    .foregroundColor(.green)
+                Text("Текущая сумма: \(goal.currentAmount, specifier: "%.2f")")
+                    .font(.headline)
+            }
+            .padding(.horizontal)
 
-            TextField("Add Amount", text: $addAmount)
+            TextField("Добавить сумму", text: $addAmount)
                 .keyboardType(.decimalPad)
                 .padding()
                 .background(Color.gray.opacity(0.1))
                 .cornerRadius(8)
                 .padding(.horizontal)
 
-            Button("Update Progress") {
+            Button("Обновить прогресс") {
                 updateProgress()
             }
             .padding()
@@ -40,37 +52,45 @@ struct GoalDetailView: View {
 
             Spacer()
         }
-        .navigationTitle("Goal Details")
+        .navigationTitle("Детали цели")
+        .alert(isPresented: $showErrorAlert) {
+            Alert(title: Text("Ошибка"), message: Text(errorMessage), dismissButton: .default(Text("OK")))
+        }
     }
+
+    @State private var showErrorAlert = false
+    @State private var errorMessage = ""
 
     private func goalProgress() -> Double {
         return min(goal.currentAmount / goal.targetAmount, 1.0)
     }
 
     private func updateProgress() {
-        guard let amount = Double(addAmount) else { return }
+        guard let amount = Double(addAmount) else {
+            errorMessage = "Пожалуйста, введите корректную сумму."
+            showErrorAlert = true
+            return
+        }
         goal.currentAmount += amount
         addAmount = ""
     }
 
-    private func currencySymbol() -> String {
-        switch selectedCurrency {
-        case "USD":
-            return "$"
-        case "EUR":
-            return "€"
-        case "RUB":
-            return "₽"
-        case "UZS":
-            return "UZS "
-        case "GBP":
-            return "£"
-        case "JPY":
-            return "¥"
-        case "CNY":
-            return "¥"
+    private func colorFromName(_ name: String) -> Color {
+        switch name {
+        case "red":
+            return .red
+        case "blue":
+            return .blue
+        case "green":
+            return .green
+        case "purple":
+            return .purple
+        case "orange":
+            return .orange
+        case "gray":
+            return .gray
         default:
-            return "$"
+            return .blue
         }
     }
 }

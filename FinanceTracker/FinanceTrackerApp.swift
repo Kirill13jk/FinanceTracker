@@ -18,6 +18,6 @@ struct FinanceTrackerApp: App {
         WindowGroup {
             MainView()
         }
-        .modelContainer(for: [Transaction.self, Budget.self, Category.self, Post.self, Goal.self])
+        .modelContainer(for: [Transaction.self, Budget.self, Category.self, Goal.self])
     }
 }
