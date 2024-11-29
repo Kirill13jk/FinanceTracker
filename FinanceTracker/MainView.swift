@@ -1,36 +1,54 @@
 import SwiftUI
-import SwiftData
 
 struct MainView: View {
-    @Environment(\.modelContext) private var modelContext
+    @State private var selectedTab = 0
 
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
+            // Первый таб: Главная
             NavigationView {
                 ContentView()
+                    .navigationTitle("Home")
+                    .navigationBarTitleDisplayMode(.inline)
             }
             .tabItem {
-                Label("Транзакции", systemImage: "creditcard")
+                Label("Home", systemImage: "house")
             }
+            .tag(0)
+
+            // Второй таб: Аналитика
             NavigationView {
                 AnalyticsView()
+                    .navigationTitle("Analytics")
+                    .navigationBarTitleDisplayMode(.inline)
             }
             .tabItem {
-                Label("Аналитика", systemImage: "chart.bar.xaxis")
+                Label("Analytics", systemImage: "chart.pie")
             }
-            NavigationView {
-                PostsView()
-            }
-            .tabItem {
-                Label("Советы", systemImage: "lightbulb")
-            }
-        }
-        .onAppear {
-            initializeData()
-        }
-    }
+            .tag(1)
 
-    private func initializeData() {
-        DataInitializer.initializeData(modelContext: modelContext)
+            // Третий таб: Цели
+            NavigationView {
+                GoalsView()
+                    .navigationTitle("Goals")
+                    .navigationBarTitleDisplayMode(.inline)
+            }
+            .tabItem {
+                Label("Goals", systemImage: "target")
+            }
+            .tag(2)
+            
+            // Четвертый таб: Настройки
+            NavigationView {
+                SettingsView()
+                    .navigationTitle("Settings")
+                    .navigationBarTitleDisplayMode(.inline)
+            }
+            .tabItem {
+                Label("Settings", systemImage: "gearshape")
+            }
+            .tag(3)
+        }
+        .accentColor(.blue)
     }
 }
