@@ -8,22 +8,51 @@ struct MainView: View {
         TabView {
             NavigationView {
                 ContentView()
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            NavigationLink(destination: SettingsView()) {
+                                Image(systemName: "gearshape")
+                                    .imageScale(.large)
+                            }
+                        }
+                    }
             }
             .tabItem {
-                Label("Транзакции", systemImage: "creditcard")
+                Label("Transactions", systemImage: "creditcard")
             }
+
             NavigationView {
                 AnalyticsView()
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            NavigationLink(destination: SettingsView()) {
+                                Image(systemName: "gearshape")
+                                    .imageScale(.large)
+                            }
+                        }
+                    }
             }
             .tabItem {
-                Label("Аналитика", systemImage: "chart.bar.xaxis")
+                Label("Analytics", systemImage: "chart.bar.xaxis")
             }
+
             NavigationView {
                 PostsView()
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            NavigationLink(destination: SettingsView()) {
+                                Image(systemName: "gearshape")
+                                    .imageScale(.large)
+                            }
+                        }
+                    }
             }
             .tabItem {
-                Label("Советы", systemImage: "lightbulb")
+                Label("Posts", systemImage: "lightbulb")
             }
+        }
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: 20)
         }
         .onAppear {
             initializeData()

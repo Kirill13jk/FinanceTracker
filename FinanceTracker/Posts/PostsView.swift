@@ -3,6 +3,7 @@ import SwiftData
 
 struct PostsView: View {
     @Query private var posts: [Post]
+    @AppStorage("titleOn") private var titleOn: Bool = true
 
     var body: some View {
         NavigationView {
@@ -22,7 +23,10 @@ struct PostsView: View {
                     .padding(.vertical, 8)
                 }
             }
-            .navigationTitle("Полезные советы")
+            .navigationTitle(titleOn ? NSLocalizedString("posts", comment: "") : "")
+            .onAppear {
+                print("Количество постов: \(posts.count)")
+            }
         }
     }
 }
