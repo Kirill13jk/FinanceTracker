@@ -39,11 +39,15 @@ struct MainView: View {
             .tag(2)
             
             // Четвертый таб: Настройки
-            SettingsView()
-                .tabItem {
-                    Label("Settings", systemImage: "gearshape")
-                }
-                .tag(3)
+            NavigationView {
+                SettingsView()
+                    .navigationTitle("Settings")
+                    .navigationBarTitleDisplayMode(.inline)
+            }
+            .tabItem {
+                Label("Settings", systemImage: "gearshape")
+            }
+            .tag(3)
         }
         .accentColor(.blue)
     }

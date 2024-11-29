@@ -39,7 +39,7 @@ struct SettingsView: View {
             }
         }
         .listStyle(InsetGroupedListStyle())
-        .navigationTitle("Настройки")
+        .navigationTitle("Settings")
         .onAppear {
             tempSelectedCurrency = selectedCurrency
         }

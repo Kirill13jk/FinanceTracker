@@ -1,9 +1,8 @@
-// AddTransactionView.swift
-
 import SwiftUI
 import SwiftData
 
 struct AddTransactionView: View {
+    // MARK: - Категории
     private let incomeSources = [
         ("Work", "briefcase.fill"),
         ("Business", "building.2.fill"),
@@ -19,10 +18,12 @@ struct AddTransactionView: View {
         ("Other", "ellipsis")
     ]
 
+    // MARK: - Окружение и состояние
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
     @AppStorage("selectedCurrency") private var selectedCurrency: String = "USD"
+    @State private var isShowingDatePicker = false
 
     @State private var amount: String = ""
     @State private var selectedCategoryName: String = "Food"
@@ -36,74 +37,104 @@ struct AddTransactionView: View {
     @FocusState private var noteFieldIsFocused: Bool
 
     var body: some View {
-        VStack {
-            HStack {
-                VStack(alignment: .leading) {
-                    Text("Total Balance")
-                        .font(.headline)
-                        .foregroundColor(.gray)
-                    Text("\(currencySymbol())\(totalBalance, specifier: "%.2f")")
-                        .font(.title)
-                        .bold()
+        ScrollView {
+            VStack(spacing: 16) {
+                // Общий баланс
+                HStack {
+                    VStack(alignment: .leading) {
+                        Text("Total Balance")
+                            .font(.headline)
+                            .foregroundColor(.gray)
+                        Text("\(currencySymbol())\(totalBalance, specifier: "%.2f")")
+                            .font(.title)
+                            .bold()
+                    }
+                    Spacer()
                 }
-                Spacer()
-            }
-            .padding()
-            .onAppear {
-                totalBalance = calculateTotalBalance()
-            }
-
-            Picker("Type", selection: $isExpense) {
-                Text("Income").tag(false)
-                Text("Expense").tag(true)
-            }
-            .pickerStyle(SegmentedPickerStyle())
-            .padding(.horizontal)
-
-            if isExpense {
-                CategorySelectionGridView(
-                    categories: expenseCategories,
-                    selectedCategory: $selectedCategoryName
-                )
-            } else {
-                CategorySelectionGridView(
-                    categories: incomeSources,
-                    selectedCategory: $selectedPaymentMethod
-                )
-            }
-
-            Text("\(currencySymbol())\(amount.isEmpty ? "0.00" : amount)")
-                .font(.system(size: 50))
-                .bold()
-                .padding()
-
-            TextField("Add comment...", text: $note)
-                .padding()
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(10)
                 .padding(.horizontal)
-                .focused($noteFieldIsFocused)
-
-            Spacer()
-
-            NumericKeypad(
-                amount: $amount,
-                onSave: saveTransaction,
-                onDateTap: {
-                    noteFieldIsFocused = false
-                    UIApplication.shared.endEditing()
-                    // Handle date selection if needed
+                .onAppear {
+                    totalBalance = calculateTotalBalance()
                 }
-            )
-            .padding(.bottom, 30)
-            .padding(.horizontal)
+
+                // Переключатель типа транзакции
+                Picker("Type", selection: $isExpense) {
+                    Text("Income").tag(false)
+                    Text("Expense").tag(true)
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .padding(.horizontal)
+
+                // Выбор категории
+                if isExpense {
+                    CategorySelectionGridView(
+                        categories: expenseCategories,
+                        selectedCategory: $selectedCategoryName
+                    )
+                } else {
+                    CategorySelectionGridView(
+                        categories: incomeSources,
+                        selectedCategory: $selectedPaymentMethod
+                    )
+                }
+
+                // Отображение суммы
+                Text("\(currencySymbol())\(amount.isEmpty ? "0.00" : amount)")
+                    .font(.system(size: 40))
+                    .bold()
+                    .padding()
+                    .minimumScaleFactor(0.5)
+                    .lineLimit(1)
+
+                // Отображение выбранной даты
+                HStack {
+                    Text("Date:")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                    Spacer()
+                    Text("\(formattedDate(selectedDate))")
+                        .font(.subheadline)
+                        .foregroundColor(.blue)
+                        .onTapGesture {
+                            noteFieldIsFocused = false
+                            UIApplication.shared.endEditing()
+                            isShowingDatePicker = true
+                        }
+                }
+                .padding(.horizontal)
+
+                // Поле для комментариев
+                TextField("Add comment...", text: $note)
+                    .padding()
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(10)
+                    .padding(.horizontal)
+                    .focused($noteFieldIsFocused)
+
+                // Цифровая клавиатура
+                NumericKeypad(
+                    amount: $amount,
+                    onSave: saveTransaction,
+                    onDateTap: {
+                        noteFieldIsFocused = false
+                        UIApplication.shared.endEditing()
+                        isShowingDatePicker = true
+                    }
+                )
+                .padding(.bottom, 30)
+                .padding(.horizontal)
+            }
+            .padding(.top)
         }
         .navigationBarTitle("", displayMode: .inline)
-        .padding(.top)
         .alert(isPresented: $showAlert) {
             Alert(title: Text("Invalid Input"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
         }
+        .sheet(isPresented: $isShowingDatePicker) {
+            DatePickerView(selectedDate: $selectedDate, isShowing: $isShowingDatePicker)
+        }
     }
+
+    // MARK: - Функции
 
     private func saveTransaction() {
         guard let amountValue = Double(amount), amountValue > 0 else {
@@ -115,8 +146,7 @@ struct AddTransactionView: View {
         let category = isExpense ? selectedCategoryName : selectedPaymentMethod
 
         let newTransaction = Transaction(
-            amount: amountValue,
-            category: category,
+            amount: amountValue, category: category,
             date: selectedDate,
             note: note.isEmpty ? nil : note,
             isExpense: isExpense
@@ -127,6 +157,8 @@ struct AddTransactionView: View {
             dismiss()
         } catch {
             print("Error saving transaction: \(error)")
+            alertMessage = "Failed to save transaction. Please try again."
+            showAlert = true
         }
     }
 
@@ -167,45 +199,15 @@ struct AddTransactionView: View {
             return "$"
         }
     }
-}
 
-struct CategorySelectionGridView: View {
-    let categories: [(String, String)]
-    @Binding var selectedCategory: String
-
-    let columns = [GridItem(.adaptive(minimum: 60))]
-
-    var body: some View {
-        LazyVGrid(columns: columns, spacing: 16) {
-            ForEach(categories, id: \.0) { category in
-                Button(action: {
-                    selectedCategory = category.0
-                }) {
-                    VStack {
-                        Image(systemName: category.1)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 24, height: 24)
-                            .foregroundColor(selectedCategory == category.0 ? .blue : .gray)
-                    }
-                    .frame(width: 60, height: 60)
-                    .background(selectedCategory == category.0 ? Color.blue.opacity(0.2) : Color.gray.opacity(0.1))
-                    .clipShape(Circle())
-                    .overlay(
-                        Text(category.0)
-                            .font(.caption2)
-                            .foregroundColor(.primary)
-                            .frame(width: 60)
-                            .offset(y: 38)
-                    )
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-        }
-        .padding(.horizontal)
+    private func formattedDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        return formatter.string(from: date)
     }
 }
 
+// MARK: - NumericKeypad
 struct NumericKeypad: View {
     @Binding var amount: String
     var onSave: () -> Void
@@ -229,7 +231,7 @@ struct NumericKeypad: View {
                             Text(button)
                                 .font(.title2)
                                 .frame(maxWidth: .infinity)
-                                .frame(height: 60)
+                                .frame(height: 50)
                                 .background(Color.gray.opacity(0.1))
                                 .cornerRadius(8)
                         }
@@ -245,7 +247,7 @@ struct NumericKeypad: View {
                     Image(systemName: "calendar")
                         .font(.title2)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 60)
+                        .frame(height: 50)
                         .background(Color.orange.opacity(0.1))
                         .cornerRadius(8)
                 }
@@ -256,7 +258,7 @@ struct NumericKeypad: View {
                     Image(systemName: "checkmark")
                         .font(.title2)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 60)
+                        .frame(height: 50)
                         .background(Color.black)
                         .foregroundColor(.white)
                         .cornerRadius(8)
@@ -282,6 +284,7 @@ struct NumericKeypad: View {
     }
 }
 
+// MARK: - UIApplication Extension для закрытия клавиатуры
 extension UIApplication {
     func endEditing() {
         sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)

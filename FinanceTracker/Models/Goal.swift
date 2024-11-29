@@ -11,7 +11,7 @@ class Goal: Identifiable {
     var currentAmount: Double = 0.0
     var startDate: Date
     var endDate: Date
-    var colorName: String = "blue" // Новое свойство с значением по умолчанию
+    var colorName: String = "blue" 
 
     init(title: String, targetAmount: Double, startDate: Date, endDate: Date, colorName: String = "blue") {
         self.title = title
